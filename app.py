@@ -55,11 +55,9 @@ def create_app():
                 flash('One or more files have no selected file')
                 continue
             
-            # تأمين اسم الملف
             filename = secure_filename(file.filename)
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
-            # إعادة تسمية الملف إذا كان بنفس الاسم موجوداً
             base, extension = os.path.splitext(filename)
             counter = 1
             new_filename = filename
@@ -70,7 +68,6 @@ def create_app():
             new_file_path = os.path.join(app.config['UPLOAD_FOLDER'], new_filename)
             file.save(new_file_path)
 
-            # إضافة البيانات إلى قاعدة البيانات
             is_public = request.form.get('is_public') == 'on'  # Check if public is selected
             new_file = File(filename=new_filename, user_id=current_user.id, is_public=is_public)
             db.session.add(new_file)
