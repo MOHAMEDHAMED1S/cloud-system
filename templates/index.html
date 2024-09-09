@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f3f4f6, #e2e8f0);
+            font-family: 'Arial', sans-serif;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            font-size: 28px;
+            color: #2d3748;
+        }
+
+        #drop-zone {
+            border-radius: 10px;
+            background-color: #edf2f7;
+            transition: background-color 0.3s ease;
+        }
+
+        #drop-zone:hover {
+            background-color: #e2e8f0;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(45deg, #6a5acd, #00bfff);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 10px 20px;
+            transition: background 0.3s ease;
+        }
+
+        .btn-gradient:hover {
+            background: linear-gradient(45deg, #5a4cbf, #00a1e0);
+        }
+
+        .list-group-item {
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .list-group-item a {
+            margin-left: 10px;
+        }
+
+        .icon-btn {
+            background: transparent;
+            border: none;
+            color: #0e0e0e;
+            font-size: 16px;
+            transition: color 0.3s ease;
+        }
+
+        .icon-btn:hover {
+            color: #ccc;
+        }
+
+        .progress-bar {
+            background: linear-gradient(45deg, #ff4500, #ff6347);
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2 class="text-center">Welcome, {{ current_user.username }}</h2>
+        
+        <form class="form-inline mb-3" method="GET" action="{{ url_for('index') }}">
+            <input class="form-control mr-sm-2" type="search" placeholder="Search files..." name="search" value="{{ search_query }}">
+            <button class="btn btn-gradient" type="submit"><i class="fas fa-search"></i> Search</button>
+        </form>
+        
+        <div id="drop-zone" class="text-center mb-3">
+            <form method="POST" id="upload-form" action="{{ url_for('upload_file') }}" enctype="multipart/form-data" class="mb-3">
+                <div class="form-group">
+                    <label for="file" class="btn btn-gradient"><i class="fas fa-cloud-upload-alt"></i> Drop files here or click to upload</label>
+                    <input type="file" class="form-control-file d-none" id="file" name="files" multiple>
+                </div>
+                <div class="form-check mb-2">
+                    <input type="checkbox" class="form-check-input" name="is_public" id="isPublic">
+                    <label class="form-check-label" for="isPublic">Public</label>
+                </div>
+                <button type="submit" class="btn btn-gradient"><i class="fas fa-upload"></i> Upload</button>
+            </form>
+        </div>
+
+        <div id="progress-container" style="display: none;">
+            <progress id="progress-bar" value="0" max="100" class="form-control mb-2 progress-bar"></progress>
+            <span id="progress-text">0%</span>
+            <button id="cancel-upload" type="button" class="btn btn-danger"><i class="fas fa-times-circle"></i> Cancel</button>
+        </div>
+        
+        <h3><i class="fas fa-folder"></i> Files</h3>
+        <ul class="list-group mb-3">
+            {% for file in files %}
+            <li class="list-group-item">
+                <span><i class="fas fa-file-alt"></i> {{ file.filename }}</span>
+                <div>
+                    <a href="{{ url_for('download_file', filename=file.filename) }}" class="btn btn-sm btn-success icon-btn"><i class="fas fa-download"></i></a>
+                    <a href="{{ url_for('delete_file', filename=file.filename) }}" class="btn btn-sm btn-danger icon-btn"><i class="fas fa-trash-alt"></i></a>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        
+        <a href="{{ url_for('logout') }}" class="btn btn-warning mt-3"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+    
+    <script>
+        document.getElementById('upload-form').addEventListener('submit', function(event) {
+            event.preventDefault();  
+
+            let formData = new FormData(this);
+            let xhr = new XMLHttpRequest();
+            
+            let cancelButton = document.getElementById('cancel-upload');
+            
+            xhr.open('POST', this.action, true);
+
+            xhr.upload.addEventListener('progress', function(event) {
+                if (event.lengthComputable) {
+                    let percentComplete = Math.round((event.loaded / event.total) * 100);
+                    document.getElementById('progress-container').style.display = 'block';
+                    document.getElementById('progress-bar').value = percentComplete;
+                    document.getElementById('progress-text').innerText = percentComplete + '%';
+                }
+            });
+
+            xhr.addEventListener('load', function() {
+                if (xhr.status === 200) {
+                    window.location.reload();
+                } else {
+                    console.error('Upload failed:', xhr.responseText);
+                }
+                document.getElementById('progress-container').style.display = 'none';
+            });
+
+            cancelButton.addEventListener('click', function() {
+                xhr.abort(); 
+                document.getElementById('progress-container').style.display = 'none';
+                console.log('Upload canceled');
+            });
+
+            xhr.send(formData);
+        });
+    </script>
+</body>
+</html>
